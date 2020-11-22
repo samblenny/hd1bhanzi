@@ -3,6 +3,8 @@ hanzi for high-dpi 1-bit monochrome
 
 ## Usage
 
+### Generating List of Character Codepoints
+
 To re-generate the `core2020_g.txt` and `iicore_g.txt` lists of Simplified Chinese
 character codepoints taken from the kUnihanCore2020 and kIICore lists:
 
@@ -17,7 +19,24 @@ character codepoints taken from the kUnihanCore2020 and kIICore lists:
 3. Run `ruby gen_gsource_lists.rb`
 
 
+### Generating PNG Glyph Grid Sprite Sheet
+
+1. Make sure you have a working Go compiler, Imagemagick, and a bash shell
+
+2. Download Noto Sans SC font family using the download button at
+   https://fonts.google.com/specimen/Noto+Sans+SC?subset=chinese-simplified
+
+3. Unzip the `Noto_Sans_SC.zip` font archive, and copy the font files next to
+   `sprites.go`
+
+4. Do `go run sprites.go` to create temporary SVG sprite sheet(s)
+
+5. Do `./makeSpriteSheet.sh` to convert sprite sheet(s) from SVG to PNG
+
+
 ## Legal
+
+## Unicode® Data Files
 
 This project uses character lists derived from Unicode® Data Files at
 https://www.unicode.org/Public/13.0.0/ucd/
@@ -60,3 +79,20 @@ shall not be used in advertising or otherwise to promote the sale,
 use or other dealings in these Data Files or Software without prior
 written authorization of the copyright holder.
 ```
+
+
+## Noto Sans SC
+
+This project uses glyphs from the Noto Sans SC typeface.
+
+Noto Sans SC License Notice:
+```
+These fonts are licensed under the Open Font License.
+
+You can use them freely in your products & projects - print or digital,
+commercial or otherwise. However, you can't sell the fonts on their own.
+
+This isn't legal advice, please consider consulting a lawyer and see the
+full license for all details.
+```
+Open Font License Link: https://scripts.sil.org/OFL
