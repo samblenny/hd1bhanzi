@@ -230,12 +230,11 @@ func renderTemplate(templateString string, name string, context interface{}) str
 	return buf.String()
 }
 
-// <svg viewBox="-500 -2000 3000 3000" width="600" height="600" xmlns="http://www.w3.org/2000/svg">
+// Template for svg file with a list of paths
 const svgTemplate = `<svg version="1.1" baseProfile="full"
 viewBox="{{.ViewboxMinX}} {{.ViewboxMinY}} {{.ViewboxWidth}} {{.ViewboxHeight}}"
-width="{{.Width}}" height="{{.Height}}"
-xmlns="http://www.w3.org/2000/svg">
-<style>path{stroke:none;fill:black;fill-opacity:1;/*shape-rendering:crispEdges;*/}</style>
+width="{{.Width}}" height="{{.Height}}" xmlns="http://www.w3.org/2000/svg">
+<style>path{stroke:none;fill:black;fill-opacity:1;}</style>
 {{ range $_, $d := .GlyphPaths -}}
 <path d="{{$d}}"/>
 {{ end -}}
