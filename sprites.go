@@ -10,10 +10,10 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
-	"path/filepath"
 )
 
 // INPUT: Font file containing glyphs to be used in the sprite sheet
@@ -32,12 +32,12 @@ func main() {
 	fontSize := 32
 	gridColumns := 20
 	fnt := loadFont(filepath.Join(FontDirectory, FontFilename), fontPpem)
-	charset := loadChars(GSourceFilename, gridColumns)[:800]
+	charset := loadChars(GSourceFilename)[:200]
 	svg := spriteSheet(fnt, charset, fontPpem, fontSize, gridColumns)
 	writeSVG(OutputFilename, svg)
 }
 
-// Return a font after loading it from a file, and its ascent
+// Return a font after loading it from a file
 func loadFont(filename string, ppem int) *sfnt.Font {
 	fmt.Printf("loading font: %s\n", filename)
 	fontData, err := ioutil.ReadFile(filename)
@@ -59,27 +59,41 @@ func loadFont(filename string, ppem int) *sfnt.Font {
 	return f
 }
 
-// Load and parse hex-format character codepoints into runes
-func loadChars(filename string, columns int) []CharSpec {
+// Convert file of hex-format codepoints into slice of grapheme cluster strings.
+// Input lines should look like "3447\n", "344A\n", "356E\n", etc. Blank lines
+// and "#..." comments are skipped. Order of codepoint lines in the file should
+// match row-major order traversal of the intended glyph grid.
+func loadChars(filename string) []string {
 	fmt.Printf("loading charset: %s... ", filename)
-	cs := HanziMap(filename, columns)
-	fmt.Printf("[len=%d]\n", len(cs))
-	return cs
+	text, err := ioutil.ReadFile(filename)
+	if err != nil {
+		panic(err)
+	}
+	gcList := []string{}
+	for _, line := range strings.Split(string(text), "\n") {
+		txt := strings.TrimSpace(strings.SplitN(line, "#", 2)[0])
+		if len(txt) > 0 {
+			gcList = append(gcList, StringFromHexGC(txt))
+		}
+	}
+	fmt.Printf("[len=%d]\n", len(gcList))
+	return gcList
 }
 
 // Lay out a grid of character glyphs as a PNG sprite sheet
-func spriteSheet(fnt *sfnt.Font, charset []CharSpec, ppem int, size int, columns int) string {
+func spriteSheet(fnt *sfnt.Font, charset []string, ppem int, size int, columns int) string {
 	glyphPaths := []sfnt.Segments{}
 	bigBounds := image.Rectangle{}
-	for _, c := range charset {
-		s := c.GraphemeCluster()
-		r := []rune(s)[0]
+	for _, cluster := range charset {
+		// Assume only first codepoint of a grapheme cluster matters.
+		// This is wrong for emoji, but okay for many CJK characters.
+		r := []rune(cluster)[0]
 		// Find index for glyph
 		index, err := fnt.GlyphIndex(nil, r)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("  GlyphIndex(%s):%d\n", s, index)
+		fmt.Printf("  GlyphIndex(%s):%d\n", cluster, index)
 		if index == 0 {
 			panic("GlyphIndex = 0  (glyph not found)")
 		}
@@ -102,16 +116,6 @@ func spriteSheet(fnt *sfnt.Font, charset []CharSpec, ppem int, size int, columns
 	return renderSvgSpriteSheet(glyphPaths, bigBounds, size, columns)
 }
 
-// Convert point from 26_6 fixed-point to regular int (do not scale or truncate)
-func unfixPt(p fixed.Point26_6) image.Point {
-	return image.Pt(int(p.X), int(p.Y))
-}
-
-// Convert rectangle from 26_6 fixed-point to regular int (do not scale or truncate)
-func unfixRect(r fixed.Rectangle26_6) image.Rectangle {
-	return image.Rect(int(r.Min.X), int(r.Min.Y), int(r.Max.X), int(r.Max.Y))
-}
-
 // Write a SVG file
 func writeSVG(filename string, svg string) {
 	f, err := os.Create(filename)
@@ -122,27 +126,6 @@ func writeSVG(filename string, svg string) {
 	if err := f.Close(); err != nil {
 		panic(err)
 	}
-}
-
-// Holds mappings from extended grapheme clusters to sprite sheet glyph grid coordinates
-type CharSpec struct {
-	HexCluster string
-	Row        int
-	Col        int
-}
-
-// Parse and return the first codepoint of a hex grapheme cluster string.
-// For example, "1f3c4-200d-2640-fe0f" -> 0x1F3C4
-func (cs CharSpec) FirstCodepoint() uint32 {
-	utf8 := StringFromHexGC(cs.HexCluster)
-	codepoints := []rune(utf8)
-	return uint32(codepoints[0])
-}
-
-// Convert a hex grapheme cluster string to a regular utf8 string.
-// For example, "1f3c4-200d-2640-fe0f" -> "\U0001F3C4\u200d\u2640\ufe0f"
-func (cs CharSpec) GraphemeCluster() string {
-	return StringFromHexGC(cs.HexCluster)
 }
 
 // Parse a hex-codepoint format grapheme cluster into a utf-8 string
@@ -163,51 +146,6 @@ func StringFromHexGC(hexGC string) string {
 		cluster += string(rune(n))
 	}
 	return cluster
-}
-
-// Return mapping of hex-codepoint format grapheme clusters to grid coordinates
-// in a glyph sprite sheet for the emoji font
-func HanziMap(inputFile string, columns int) []CharSpec {
-	text, err := ioutil.ReadFile(inputFile)
-	if err != nil {
-		panic(err)
-	}
-	// Start at top left corner of the sprite sheet glyph grid
-	row := 0
-	col := 0
-	// Parse hex format grapheme cluster lines that should look like
-	// "1f4aa-1f3fc\n" "1f4e1\n", etc. Comments starting with "#" are
-	// possible. Order of grapheme cluster lines in the file should match a
-	// row-major order traversal of the glyph grid.
-	csList := []CharSpec{}
-	for _, line := range strings.Split(string(text), "\n") {
-		// Trim comments and leading/trailing whitespace
-		txt := strings.TrimSpace(strings.SplitN(line, "#", 2)[0])
-		if len(txt) > 0 {
-			// Add a CharSpec for this grapheme cluster
-			csList = append(csList, CharSpec{txt, row, col})
-			// Advance to next glyph position by row-major order
-			col += 1
-			if col == columns {
-				row += 1
-				col = 0
-			}
-		}
-		// Skip blank lines and comments
-	}
-	return csList
-}
-
-// Return a string from rendering the given template and context data
-func renderTemplate(templateString string, name string, context interface{}) string {
-	fmap := template.FuncMap{"ToLower": strings.ToLower}
-	t := template.Must(template.New(name).Funcs(fmap).Parse(templateString))
-	var buf bytes.Buffer
-	err := t.Execute(&buf, context)
-	if err != nil {
-		panic(err)
-	}
-	return buf.String()
 }
 
 // Render an svg file with vector glpyhs arranged into a grid on a sprite sheet
@@ -241,7 +179,7 @@ func renderSvgSpriteSheet(glyphPaths []sfnt.Segments, bounds image.Rectangle, si
 		Height        int
 		GlyphPaths    []string
 	}{0, 0, vbWidth, vbHeight, 2 + (size+2)*columns, 2 + (size+2)*rows, glyphPathDVals}
-	// Generate rust source code and write it to a file
+	// Generate svg source code and write it to a file
 	svg := renderTemplate(svgTemplate, "svg", context)
 	return svg
 }
@@ -268,6 +206,28 @@ func renderPath(glyphSegs sfnt.Segments, bounds image.Rectangle, corner image.Po
 		}
 	}
 	return strings.Join(dOps, " ")
+}
+
+// Convert point from 26_6 fixed-point to regular int (do not scale or truncate)
+func unfixPt(p fixed.Point26_6) image.Point {
+	return image.Pt(int(p.X), int(p.Y))
+}
+
+// Convert rectangle from 26_6 fixed-point to regular int (do not scale or truncate)
+func unfixRect(r fixed.Rectangle26_6) image.Rectangle {
+	return image.Rect(int(r.Min.X), int(r.Min.Y), int(r.Max.X), int(r.Max.Y))
+}
+
+// Return a string from rendering the given template and context data
+func renderTemplate(templateString string, name string, context interface{}) string {
+	fmap := template.FuncMap{"ToLower": strings.ToLower}
+	t := template.Must(template.New(name).Funcs(fmap).Parse(templateString))
+	var buf bytes.Buffer
+	err := t.Execute(&buf, context)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
 }
 
 // <svg viewBox="-500 -2000 3000 3000" width="600" height="600" xmlns="http://www.w3.org/2000/svg">
