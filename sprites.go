@@ -13,10 +13,12 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"path/filepath"
 )
 
 // INPUT: Font file containing glyphs to be used in the sprite sheet
-const FontFilename = "NotoSansSC-Medium.otf"
+const FontFilename = "NotoSansSC-Regular.otf"
+const FontDirectory = "Noto_Sans_SC"
 
 // INTPUT: List of hex-format character codepoints from kUnihanCore2020 source G
 const GSourceFilename = "core2020_g.txt"
@@ -27,10 +29,10 @@ const OutputFilename = "hanzi.svg"
 // Make a PNG glyph grid sprite sheet
 func main() {
 	fontPpem := 4
-	fontSize := 36
-	gridColumns := 27
-	fnt := loadFont(FontFilename, fontPpem)
-	charset := loadChars(GSourceFilename, gridColumns)[:3000]
+	fontSize := 32
+	gridColumns := 20
+	fnt := loadFont(filepath.Join(FontDirectory, FontFilename), fontPpem)
+	charset := loadChars(GSourceFilename, gridColumns)[:800]
 	svg := spriteSheet(fnt, charset, fontPpem, fontSize, gridColumns)
 	writeSVG(OutputFilename, svg)
 }

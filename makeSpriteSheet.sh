@@ -1,6 +1,7 @@
 #!/bin/bash
 
-GRAY="-colorspace gray +level 0%x85% -background white -alpha remove"
+#GRAY="-colorspace gray +level 0%x85% -background white -alpha remove"
+GRAY="-colorspace gray -level 0%,75% -background white -alpha remove"
 DITHER2="-ordered-dither o2x2,2"
 SRC="hanzi.svg"
 

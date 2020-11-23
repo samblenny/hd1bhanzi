@@ -26,8 +26,8 @@ character codepoints taken from the kUnihanCore2020 and kIICore lists:
 2. Download Noto Sans SC font family using the download button at
    https://fonts.google.com/specimen/Noto+Sans+SC?subset=chinese-simplified
 
-3. Unzip the `Noto_Sans_SC.zip` font archive, and copy the font files next to
-   `sprites.go`
+3. Unzip the `Noto_Sans_SC.zip` font archive, creating a `Noto_Sans_SC` directory
+   of font files next to `sprites.go`
 
 4. Do `go run sprites.go` to create temporary SVG sprite sheet(s)
 
