@@ -32,7 +32,7 @@ func main() {
 	fontSize := 32
 	gridColumns := 20
 	fnt := loadFont(filepath.Join(FontDirectory, FontFilename), fontPpem)
-	charset := loadChars(GSourceFilename)[:200]
+	charset := loadChars(GSourceFilename)
 	svg := spriteSheet(fnt, charset, fontPpem, fontSize, gridColumns)
 	writeSVG(OutputFilename, svg)
 }
