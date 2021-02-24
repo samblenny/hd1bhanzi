@@ -12,9 +12,9 @@ character codepoints taken from the kUnihanCore2020 and kIICore lists:
 
 2. Expand the archive, creating a `Unihan` directory next to `gen_gsource_lists.rb`
 
-3. Download https://blogs.adobe.com/CCJKType/files/2014/06/china-8105-06062014.txt
+3. Download https://ccjktype.fonts.adobe.com/wp-content/uploads/2014/06/china-8105-06062014.txt
    and move the file next to `gen_gsource_lists.rb` (related article on TGH-2013 by
-   Dr. Ken Lunde is at https://blogs.adobe.com/CCJKType/2014/03/china-8105.html)
+   Dr. Ken Lunde is at https://ccjktype.fonts.adobe.com/2014/03/china-8105.html)
 
 3. Run `ruby gen_gsource_lists.rb`
 
