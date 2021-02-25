@@ -8,6 +8,8 @@ C20_OUT = "core2020_g.txt"
 IIC_OUT = "iicore_g.txt"
 C20_RE = Regexp.compile(/U\+(.*)\tkUnihanCore2020.*G.*/)
 IIC_RE = Regexp.compile(/U\+(.*)\tkIICore.*G.*/)
+PUNCTUATION_IN = "cjk_punctuation.txt"
+INDEX_OUT = "hanzi_core2020_g_index.txt"
 
 # This is only read to verify against the other lists; data from this list is not copied
 TGH_IN = "china-8105-06062014.txt"
@@ -50,6 +52,14 @@ puts "iic - tgh:"
 puts (iic - tgh).map { |n| n.to_i(16).chr('UTF-8') }.join("")
 puts "c20 - tgh:"
 puts (c20 - tgh).map { |n| n.to_i(16).chr('UTF-8') }.join("")
+
+# Create index file with UnihanCore2020 Source G + CJK punctuation
+c20 = File.read(C20_OUT).strip
+punct = File.read(PUNCTUATION_IN).strip
+File.open(INDEX_OUT, "w") { |f|
+  f.puts(c20)
+  f.puts(punct)
+}
 
 # Expected output:
 #

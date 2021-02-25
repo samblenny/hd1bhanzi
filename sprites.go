@@ -20,8 +20,8 @@ import (
 const FontFilename = "NotoSansSC-Regular.otf"
 const FontDirectory = "Noto_Sans_SC"
 
-// INTPUT: List of hex-format character codepoints from kUnihanCore2020 source G
-const GSourceFilename = "core2020_g.txt"
+// INTPUT: List of hex-format character codepoints from kUnihanCore2020 source G + punctuation
+const GSourceFilename = "hanzi_core2020_g_index.txt"
 
 // OUTPUT: PNG file for writing the glyph grid sprite sheet
 const OutputFilename = "hanzi.svg"
@@ -161,6 +161,10 @@ func renderSvgSpriteSheet(glyphPaths []sfnt.Segments, bounds image.Rectangle, si
 		row := float64(i / columns)
 		col := float64(i % columns)
 		corner := image.Pt(int(border+col*gridCell), int(border+row*gridCell))
+		if len(segs) < 1 {
+			// Special case for whitespace: do not create a malformed path with d=""
+			continue
+		}
 		glyphPathDVals = append(glyphPathDVals, renderPath(segs, bounds, corner))
 	}
 	n := len(glyphPaths)
